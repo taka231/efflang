@@ -12,7 +12,7 @@ pub enum Instruction {
     Drop,
     Call(FuncLabel),
     Return,
-    Handle(String, Handler),
+    Handle(String, usize, Handler),
     PopHandler,
     Resume,                 // Invoke continuation
     Perform(String, usize), // Invoke effect
@@ -206,11 +206,11 @@ impl VM {
                         break;
                     }
                 }
-                Instruction::Handle(func, handler) => {
+                Instruction::Handle(func, env_count, handler) => {
                     self.return_stack.push(self.pc);
                     let handler_instance = HandlerInstance {
                         handler: handler.clone(),
-                        vsp: self.value_stack.0.len(),
+                        vsp: self.value_stack.0.len() - *env_count,
                         rsp: self.return_stack.len(),
                         hsp: self.handler_stack.0.len(),
                         esp: self.env_stack.0.len(),
@@ -286,6 +286,7 @@ fn test_vm() -> Result<()> {
     let main = vec![
         Handle(
             "g".into(),
+            0,
             Handler {
                 effects: vec![("Eff".into(), "eff".into())].into_iter().collect(),
                 value_handler: "h2".into(),
@@ -300,6 +301,7 @@ fn test_vm() -> Result<()> {
     let g = vec![
         Handle(
             "f".into(),
+            0,
             Handler {
                 effects: vec![("Eff2".into(), "eff2".into())].into_iter().collect(),
                 value_handler: "h2".into(),
